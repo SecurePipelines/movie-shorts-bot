@@ -10,16 +10,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: "3.11"
 
-      - run: |
-          pip install -r requirements.txt
+      # ✅ Cache pip dependencies
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            pip-${{ runner.os }}-
 
-      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      # ✅ Cache Whisper model (BIG speed boost)
+      - name: Cache Whisper
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/whisper
+          key: whisper-${{ runner.os }}
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
       - name: Run bot
         env:
