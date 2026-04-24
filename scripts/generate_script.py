@@ -16,9 +16,13 @@ def generate_caption(topic):
     Keep under 80 words.
     """
 
-    res = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}]
-    )
-
-    return res.choices[0].message.content
+    try:
+        res = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return res.choices[0].message.content
+    except Exception as e:
+        print(f"OpenAI API failed: {e}")
+        # Fallback script
+        return f"Hook: Discover the epic {topic}!\nStory: In this thrilling scene, heroes clash in an unforgettable battle.\nCTA: Like and subscribe for more movie magic!\n#MovieShorts #ActionScene #Cinema"
