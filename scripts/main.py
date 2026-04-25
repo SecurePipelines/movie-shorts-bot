@@ -1,27 +1,25 @@
-from trending import get_trending_topics
-from generate_script import generate_caption
-from tts import generate_voice
-from create_video import create_video
-from subtitles import generate_subtitles
-from thumbnail import create_thumbnail
-from upload import upload_video
-import os
+import json
+from downloader import download_latest_video
+from cutter import create_clips
+from uploader import upload_video
 
-def run():
-    topic = get_trending_topics()[0]
-    print("Topic:", topic)
+def main():
+    print("🚀 Starting Shorts Bot...")
 
-    script = generate_caption(topic)
+    with open("config.json") as f:
+        config = json.load(f)
 
-    audio = generate_voice(script)
-    video = create_video()
-    generate_subtitles(audio)
+    video = download_latest_video(config["channel_url"])
 
-    os.system("ffmpeg -i output/video.mp4 -vf subtitles=output/subtitles.srt output/final.mp4")
+    clips = create_clips(
+        video,
+        config["clips_per_video"],
+        config["clip_duration"]
+    )
 
-    thumb = create_thumbnail(topic)
-
-    upload_video("output/final.mp4", topic, script)
+    for i, clip in enumerate(clips):
+        title = f"🔥 Short #{i+1} | Must Watch! #shorts"
+        upload_video(clip, title)
 
 if __name__ == "__main__":
-    run()
+    main()
