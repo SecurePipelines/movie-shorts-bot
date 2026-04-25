@@ -24,8 +24,14 @@ jobs:
       - name: ⚙️ Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y ffmpeg python3-pip
+          sudo apt install -y ffmpeg python3-pip deno
           pip3 install -r requirements.txt
+
+      - name: 🍪 Create yt-dlp cookies file
+        if: secrets.YTDLP_COOKIES != ''
+        run: echo "${{ secrets.YTDLP_COOKIES }}" > yt_cookies.txt
 
       - name: 🚀 Run bot
         run: python3 scripts/main.py
+        env:
+          YTDLP_COOKIES_FILE: yt_cookies.txt
