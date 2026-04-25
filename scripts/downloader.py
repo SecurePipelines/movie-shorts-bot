@@ -92,6 +92,22 @@ def download_latest_video(channel_url):
         video_url = data["webpage_url"]
 
     print("⬇️ Downloading:", video_url)
-    subprocess.run(["yt-dlp", *cookies_args, *js_args, "-f", "mp4", "-o", "video.mp4", video_url], check=True)
+    try:
+        subprocess.run(
+            ["yt-dlp", *cookies_args, *js_args, "--no-playlist", "-f", "mp4", "-o", "video.mp4", video_url],
+            check=True,
+            stderr=subprocess.STDOUT,
+            stdout=subprocess.PIPE
+        )
+    except subprocess.CalledProcessError as exc:
+        output = exc.stdout.decode(errors="replace") if exc.stdout else ""
+        print("yt-dlp failed while downloading:\n", output)
+        if "Sign in to confirm you’re not a bot" in output:
+            raise RuntimeError(
+                "This YouTube video requires cookies/authentication. "
+                "Set the YTDLP_COOKIES secret with exported browser cookies, "
+                "or use a publicly accessible video URL."
+            ) from exc
+        raise
 
     return "video.mp4"
