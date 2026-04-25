@@ -1,6 +1,9 @@
 name: YouTube Shorts Bot
 
 on:
+  push:
+    branches:
+      - feature/test
   schedule:
     - cron: "0 6 * * *"
   workflow_dispatch:
