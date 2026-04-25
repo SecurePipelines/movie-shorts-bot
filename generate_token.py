@@ -1,7 +1,10 @@
 from google_auth_oauthlib.flow import InstalledAppFlow
 
-# Scope for uploading videos
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+# Scopes for uploading videos and reading channel data
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube.readonly"
+]
 
 def main():
     # Load client secrets

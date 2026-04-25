@@ -2,6 +2,15 @@ import os
 import subprocess
 import json
 import tempfile
+from urllib.parse import urlparse, parse_qs
+
+from google.oauth2.credentials import Credentials
+import googleapiclient.discovery
+
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube.readonly"
+]
 
 
 def _build_cookies_args():
@@ -20,21 +29,67 @@ def _build_cookies_args():
     return []
 
 
+def _is_youtube_video_url(url):
+    parsed = urlparse(url)
+    host = parsed.netloc.lower()
+
+    if host.endswith("youtube.com"):
+        if parsed.path == "/watch" and "v=" in parsed.query:
+            return True
+        if parsed.path.startswith("/shorts/"):
+            return True
+    if host in ("youtu.be", "www.youtu.be"):
+        return True
+
+    return False
+
+
+def _get_video_url_from_input(url):
+    if not _is_youtube_video_url(url):
+        return None
+
+    parsed = urlparse(url)
+    host = parsed.netloc.lower()
+
+    if host.endswith("youtube.com"):
+        if parsed.path == "/watch":
+            query = parse_qs(parsed.query)
+            video_id = query.get("v", [None])[0]
+            if video_id:
+                return f"https://www.youtube.com/watch?v={video_id}"
+        if parsed.path.startswith("/shorts/"):
+            video_id = parsed.path.split("/shorts/", 1)[1].strip("/")
+            if video_id:
+                return f"https://www.youtube.com/watch?v={video_id}"
+
+    if host in ("youtu.be", "www.youtu.be"):
+        video_id = parsed.path.strip("/")
+        if video_id:
+            return f"https://www.youtube.com/watch?v={video_id}"
+
+    return None
+
+
 def download_latest_video(channel_url):
     print("📥 Fetching latest video...")
 
     cookies_args = _build_cookies_args()
     js_args = ["--js-runtimes", "deno"]
-    cmd = ["yt-dlp", *cookies_args, *js_args, "-j", "--playlist-items", "1", channel_url]
 
-    try:
-        result = subprocess.check_output(cmd, stderr=subprocess.STDOUT).decode()
-    except subprocess.CalledProcessError as exc:
-        print("yt-dlp failed with output:\n", exc.output.decode(errors="replace"))
-        raise
+    video_url = _get_video_url_from_input(channel_url)
+    if video_url:
+        print("Direct video URL detected:", video_url)
+    else:
+        cmd = ["yt-dlp", *cookies_args, *js_args, "-j", "--playlist-items", "1", channel_url]
 
-    data = json.loads(result.splitlines()[0])
-    video_url = data["webpage_url"]
+        try:
+            result = subprocess.check_output(cmd, stderr=subprocess.STDOUT).decode()
+        except subprocess.CalledProcessError as exc:
+            print("yt-dlp failed with output:\n", exc.output.decode(errors="replace"))
+            raise
+
+        data = json.loads(result.splitlines()[0])
+        video_url = data["webpage_url"]
 
     print("⬇️ Downloading:", video_url)
     subprocess.run(["yt-dlp", *cookies_args, *js_args, "-f", "mp4", "-o", "video.mp4", video_url], check=True)
