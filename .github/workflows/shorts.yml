@@ -28,8 +28,10 @@ jobs:
           pip3 install -r requirements.txt
 
       - name: 🍪 Create yt-dlp cookies file
-        if: ${{ secrets.YTDLP_COOKIES != '' }}
-        run: echo "${{ secrets.YTDLP_COOKIES }}" > yt_cookies.txt
+        run: |
+          if [ -n "${{ secrets.YTDLP_COOKIES }}" ]; then
+            echo "${{ secrets.YTDLP_COOKIES }}" > yt_cookies.txt
+          fi
 
       - name: 🚀 Run bot
         run: python3 scripts/main.py
