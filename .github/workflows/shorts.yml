@@ -24,13 +24,13 @@ jobs:
       - name: ⚙️ Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y ffmpeg python3-pip
+          sudo apt install -y ffmpeg python3-pip curl
           pip3 install -r requirements.txt
 
       - name: ⚙️ Install Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.x
+        run: |
+          curl -fsSL https://deno.land/install.sh | sh
+          echo "$HOME/.deno/bin" >> $GITHUB_PATH
 
       - name: 🍪 Create yt-dlp cookies file
         run: |

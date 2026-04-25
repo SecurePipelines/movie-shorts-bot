@@ -24,13 +24,19 @@ def download_latest_video(channel_url):
     print("📥 Fetching latest video...")
 
     cookies_args = _build_cookies_args()
-    cmd = ["yt-dlp", *cookies_args, "-j", "--playlist-items", "1", channel_url]
-    result = subprocess.check_output(cmd).decode()
+    js_args = ["--js-runtimes", "deno"]
+    cmd = ["yt-dlp", *cookies_args, *js_args, "-j", "--playlist-items", "1", channel_url]
+
+    try:
+        result = subprocess.check_output(cmd, stderr=subprocess.STDOUT).decode()
+    except subprocess.CalledProcessError as exc:
+        print("yt-dlp failed with output:\n", exc.output.decode(errors="replace"))
+        raise
 
     data = json.loads(result.splitlines()[0])
     video_url = data["webpage_url"]
 
     print("⬇️ Downloading:", video_url)
-    subprocess.run(["yt-dlp", *cookies_args, "-f", "mp4", "-o", "video.mp4", video_url], check=True)
+    subprocess.run(["yt-dlp", *cookies_args, *js_args, "-f", "mp4", "-o", "video.mp4", video_url], check=True)
 
     return "video.mp4"
