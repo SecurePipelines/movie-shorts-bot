@@ -22,7 +22,8 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install feedparser
+        run: |
+          pip install requests feedparser
 
       - name: Run script
         id: check
