@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Python
@@ -22,18 +22,13 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: |
-          pip install requests feedparser
+        run: pip install -r requirements.txt
 
       - name: Run script
         run: python check_youtube.py
 
-      - name: Trigger next step if video found
-        if: env.VIDEO_FOUND == 'true'
-        run: |
-          echo "New video detected!"
-          echo "Title: $TITLE"
-          echo "URL: $URL"
-
-          # 👉 call your next script here
-          # python generate_shorts.py "$URL"
+      - name: Upload downloaded video
+        uses: actions/upload-artifact@v4
+        with:
+          name: youtube-video
+          path: downloads/
