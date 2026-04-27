@@ -1,6 +1,6 @@
 import requests
 import re
-import feedparser
+import json
 import os
 import sys
 
@@ -12,52 +12,43 @@ HEADERS = {
 }
 
 try:
-    # Step 1: Get channel page
-    url = f"https://www.youtube.com/{CHANNEL_HANDLE}"
-    html = requests.get(url, headers=HEADERS, timeout=10).text
-
-    match = re.search(r'"externalId":"(UC[\w-]+)"', html)
-
-    if not match:
-        print("❌ Channel ID not found")
-        print("VIDEO_FOUND=false")
-        sys.exit(0)
-
-    channel_id = match.group(1)
-    print("Channel ID:", channel_id)
-
-    # Step 2: Convert to playlist
-    playlist_id = "UU" + channel_id[2:]
-
-    # Step 3: Fetch RSS using requests (IMPORTANT FIX)
-    feed_url = f"https://www.youtube.com/feeds/videos.xml?playlist_id={playlist_id}"
-
-    response = requests.get(feed_url, headers=HEADERS, timeout=10)
+    url = f"https://www.youtube.com/{CHANNEL_HANDLE}/videos"
+    response = requests.get(url, headers=HEADERS, timeout=10)
 
     if response.status_code != 200:
-        print("❌ RSS fetch failed:", response.status_code)
+        print("❌ Failed to fetch page")
         print("VIDEO_FOUND=false")
         sys.exit(0)
 
-    feed = feedparser.parse(response.text)
+    html = response.text
 
-    if not feed.entries:
-        print("❌ RSS parsed but no entries (likely blocked earlier)")
+    # Extract ytInitialData JSON
+    match = re.search(r'var ytInitialData = ({.*?});', html)
+
+    if not match:
+        print("❌ Could not extract video data")
         print("VIDEO_FOUND=false")
         sys.exit(0)
 
-    latest = feed.entries[0]
+    data = json.loads(match.group(1))
 
-    video_id = latest.get("yt_videoid", "")
-    title = latest.get("title", "")
-    video_url = latest.get("link", "")
+    # Navigate JSON safely
+    videos = data["contents"]["twoColumnBrowseResultsRenderer"]["tabs"][1]\
+        ["tabRenderer"]["content"]["richGridRenderer"]["contents"]
 
-    if not video_id:
-        print("❌ Invalid video data")
-        print("VIDEO_FOUND=false")
-        sys.exit(0)
+    # Find first video
+    for item in videos:
+        if "richItemRenderer" in item:
+            video_data = item["richItemRenderer"]["content"]["videoRenderer"]
+            video_id = video_data["videoId"]
+            title = video_data["title"]["runs"][0]["text"]
+            break
 
-    # Step 4: Check last video
+    video_url = f"https://www.youtube.com/watch?v={video_id}"
+
+    print("Latest Video:", title)
+
+    # Check last processed
     if os.path.exists(LAST_VIDEO_FILE):
         with open(LAST_VIDEO_FILE, "r") as f:
             last_video = f.read().strip()
