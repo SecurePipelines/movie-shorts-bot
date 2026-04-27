@@ -3,7 +3,7 @@ name: Check YouTube Latest Video
 on:
   push:
     branches:
-      - feature/youtube
+      - fetaure/youtube
   # schedule:
   #   - cron: "0 * * * *"   # every hour
   workflow_dispatch:
