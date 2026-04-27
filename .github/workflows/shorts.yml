@@ -1,44 +1,43 @@
-name: YouTube Shorts Bot
+name: Check YouTube Latest Video
 
 on:
   push:
     branches:
-      - feature/test
+      - feature/youtube
   schedule:
-    - cron: "0 6 * * *"
+    - cron: "0 * * * *"   # every hour
   workflow_dispatch:
 
 jobs:
-  run:
+  check-video:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout repo
-        uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      - name: 🔐 Create credential files
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install feedparser
+
+      - name: Run script
+        id: check
         run: |
-          echo '${{ secrets.CLIENT_SECRET_JSON }}' > client_secret.json
-          echo '${{ secrets.TOKEN_JSON }}' > token.json
+          output=$(python check_youtube.py)
+          echo "$output"
 
-      - name: ⚙️ Install dependencies
+          echo "$output" >> $GITHUB_ENV
+
+      - name: Trigger next step if video found
+        if: env.VIDEO_FOUND == 'true'
         run: |
-          sudo apt update
-          sudo apt install -y ffmpeg python3-pip curl
-          pip3 install -r requirements.txt
+          echo "New video detected!"
+          echo "Title: $TITLE"
+          echo "URL: $URL"
 
-      - name: ⚙️ Install Deno
-        run: |
-          curl -fsSL https://deno.land/install.sh | sh
-          echo "$HOME/.deno/bin" >> $GITHUB_PATH
-
-      - name: 🍪 Create yt-dlp cookies file
-        run: |
-          if [ -n "${{ secrets.YTDLP_COOKIES }}" ]; then
-            echo "${{ secrets.YTDLP_COOKIES }}" > yt_cookies.txt
-          fi
-
-      - name: 🚀 Run bot
-        run: python3 scripts/main.py
-        env:
-          YTDLP_COOKIES_FILE: yt_cookies.txt
+          # 👉 call your next script here
+          # python generate_shorts.py "$URL"
