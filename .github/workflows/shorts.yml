@@ -26,12 +26,7 @@ jobs:
           pip install requests feedparser
 
       - name: Run script
-        id: check
-        run: |
-          output=$(python check_youtube.py)
-          echo "$output"
-
-          echo "$output" >> $GITHUB_ENV
+        run: python check_youtube.py
 
       - name: Trigger next step if video found
         if: env.VIDEO_FOUND == 'true'
